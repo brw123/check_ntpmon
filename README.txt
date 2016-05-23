@@ -1,6 +1,11 @@
+UNMAINTAINED - please see https://github.com/paulgear/ntpmon for future
+updates.
+
+
 check_ntpmon
 by Paul Gear <github@libertysys.com.au>
 Copyright (c) 2015 Gear Consulting Pty Ltd <http://libertysys.com.au/>
+
 
 License
 -------
