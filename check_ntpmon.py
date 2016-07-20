@@ -495,7 +495,7 @@ def main():
         '--checks',
         choices=methodnames,
         nargs='*',
-        help='Space seperated list of checks to run; if omitted, run all checks.')
+        help='Space separated list of checks to run; if omitted, run all checks.')
     parser.add_argument(
         '--debug',
         action='store_true',
