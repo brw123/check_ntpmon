@@ -47,7 +47,7 @@ Startup delay
 Usage
 -----
 
-check_ntpmon.py [-h] [--check {offset,peers,reachability,sync}]
+check_ntpmon.py [-h] [--checks {offset,peers,reachability,sync}]
                 [--debug] [--test] [--critreach CRITREACH]
                 [--warnreach WARNREACH] [--okpeers OKPEERS]
                 [--warnoffset WARNOFFSET] [--warnpeers WARNPEERS]
@@ -55,9 +55,10 @@ check_ntpmon.py [-h] [--check {offset,peers,reachability,sync}]
 
 optional arguments:
   -h, --help            show this help message and exit
-  --check {offset,peers,reachability,sync}
+  --checks {offset,peers,reachability,sync}
                         Select check to run; if omitted, run all checks and
-                        return the worst result.
+                        return the worst result.  Multiple checks may be
+			specified.
   --debug               Include "ntpq -pn" output and internal state dump
                         along with check results.
   --test                Accept "ntpq -pn" output on standard input instead of
