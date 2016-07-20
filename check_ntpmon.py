@@ -492,9 +492,10 @@ def main():
     parser = argparse.ArgumentParser(
         description='Nagios NTP check incorporating the logic of NTPmon')
     parser.add_argument(
-        '--check',
+        '--checks',
         choices=methodnames,
-        help='Select check to run; if omitted, run all checks and return the worst result.')
+        nargs='*',
+        help='Space seperated list of checks to run; if omitted, run all checks.')
     parser.add_argument(
         '--debug',
         action='store_true',
@@ -520,8 +521,8 @@ def main():
     lines = NTPPeers.query() if not args.test else [x.rstrip() for x in sys.stdin.readlines()]
     if lines is None:
         # Unknown result
-        print "UNKNOWN: Cannot get peers from ntpq.  Please check that an NTP server is installed and running."
-        sys.exit(3)
+        print "CRITICAL: Cannot get peers from ntpq.  Please check that an NTP server is installed and running."
+        sys.exit(2)
 
     # Don't report anything other than OK until ntpd has been running for at
     # least enough time for 8 polling intervals of 64 seconds each.
@@ -544,17 +545,16 @@ def main():
     methods = [ntp.check_offset, ntp.check_peers, ntp.check_reachability,
                ntp.check_sync]
     checkmethods = dict(zip(methodnames, methods))
+    methods_to_run = []
 
     # if check argument is specified, run just that check
-    ret = 0
-    if checkmethods.get(args.check):
-        method = checkmethods[args.check]
-        ret = method()
-    # else check all the methods
+    if args.checks:
+        for c in args.checks:
+            methods_to_run.append(checkmethods[c])
     else:
-        ret = ntp.checks()
+        methods_to_run = methods
 
-    sys.exit(ret)
+    sys.exit(ntp.checks(methods=methods_to_run))
 
 
 if __name__ == "__main__":
