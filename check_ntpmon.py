@@ -45,6 +45,15 @@ def isipaddressy(name):
     return re.search(r'^[0-9a-f.:]*$', name) is not None
 
 
+def report_reachability(old, new):
+    if old > new:
+        return "decreasing"
+    elif new > old:
+        return "increasing"
+    else:
+        return "stable"
+
+
 class CheckNTPMonSilent(object):
 
     def __init__(self,
@@ -254,6 +263,8 @@ class NTPPeers(object):
             'peers': 0,
             'offsetall': 0,
             'totalreach': 0,
+            'oldreach': 0,
+            'newreach': 0,
         }
         self.check = check
 
@@ -286,8 +297,12 @@ class NTPPeers(object):
             # reachability - this counts the number of bits set in the reachability field
             # (which is displayed in octal in the ntpq output)
             # http://stackoverflow.com/questions/9829578/fast-way-of-counting-bits-in-python
-            self.ntpdata['totalreach'] += bin(int(peerdata['reach'],
-                                                  8)).count("1")
+            reachint = int(peerdata['reach'], 8)
+            self.ntpdata['totalreach'] += bin(reachint).count("1")
+
+            # count the 4 oldest & 4 newest polls
+            self.ntpdata['oldreach'] += bin((reachint >> 4) & 0x0f).count("1")
+            self.ntpdata['newreach'] += bin(reachint & 0x0f).count("1")
 
         # average offsets
         if self.ntpdata['survivors'] > 0:
@@ -329,6 +344,11 @@ class NTPPeers(object):
         self.dumppart('discards', 'averageoffsetdiscards', 'discarded')
         print("Average reachability of all peers: %d%%" % (
             self.ntpdata['reachability']))
+        print("Reachability is %s (%d vs %d)" % (
+            report_reachability(self.ntpdata['oldreach'], self.ntpdata['newreach']),
+            self.ntpdata['oldreach'],
+            self.ntpdata['newreach'],
+        ))
 
     def check_peers(self, check=None):
         """Check the number of usable peers"""
@@ -381,7 +401,12 @@ class NTPPeers(object):
         if check is None:
             check = self.check if self.check else CheckNTPMon()
         if self.ntpdata.get('syncpeer') is None:
-            ret = [2, "CRITICAL: No sync peer"]
+            if self.ntpdata['oldreach'] < self.ntpdata['newreach']:
+                # reachability is improving, we should be in sync soon
+                ret = [1, "WARNING: No sync peer"]
+            else:
+                # reachability is decreasing or stable
+                ret = [2, "CRITICAL: No sync peer"]
             if check.is_silent():
                 return ret
             else:
